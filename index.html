@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nodus — Automatisation du Reporting Réglementaire</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Geist+Mono:wght@300;400;500&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink:      #0d0f14;
+  --ink-soft: #3a3d47;
+  --ink-dim:  #7a7f8e;
+  --rule:     rgba(13,15,20,0.1);
+  --rule-s:   rgba(13,15,20,0.18);
+  --canvas:   #f7f6f3;
+  --paper:    #ffffff;
+  --accent:   #0d2966;
+  --accent-d: rgba(13,41,102,0.07);
+  --warm:     #c9a050;
+  --green:    #1a6644;
+  --red:      #8b2020;
+}
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; -webkit-font-smoothing:antialiased; }
+body { background:var(--canvas); color:var(--ink); font-family:'Geist',sans-serif; font-weight:300; overflow-x:hidden; }
+
+.lbl { font-family:'Geist Mono',monospace; font-size:0.67rem; font-weight:400; letter-spacing:0.18em; text-transform:uppercase; color:var(--ink-dim); }
+.lbl.ac { color:var(--accent); }
+h1,h2 { font-family:'Cormorant Garamond',serif; font-weight:300; letter-spacing:-0.02em; line-height:1.07; color:var(--ink); }
+h1 { font-size:clamp(3rem,5.5vw,6.2rem); }
+h2 { font-size:clamp(2.2rem,3.8vw,4rem); }
+p { font-size:0.93rem; line-height:1.8; color:var(--ink-soft); font-weight:300; }
+hr.r { border:none; border-top:1px solid var(--rule-s); }
+
+/* NAV */
+nav { position:fixed; top:0; left:0; right:0; z-index:900; background:rgba(247,246,243,0.95); backdrop-filter:blur(12px); border-bottom:1px solid var(--rule); transition:border-color .3s; }
+.ni { max-width:1280px; margin:0 auto; padding:0 5rem; height:64px; display:flex; align-items:center; justify-content:space-between; }
+.logo { font-family:'Cormorant Garamond',serif; font-size:1.45rem; font-weight:500; color:var(--ink); text-decoration:none; letter-spacing:-0.03em; }
+.logo sup { font-family:'Geist Mono',monospace; font-size:0.42rem; letter-spacing:.15em; color:var(--accent); vertical-align:super; margin-left:.1rem; }
+.nl { display:flex; align-items:center; gap:3rem; }
+.nl a { font-size:0.77rem; font-weight:400; color:var(--ink-soft); text-decoration:none; transition:color .15s; }
+.nl a:hover { color:var(--ink); }
+.nl .cta { padding:.52rem 1.35rem; background:var(--ink); color:var(--canvas) !important; border-radius:2px; font-size:.72rem !important; font-weight:500 !important; transition:background .2s !important; }
+.nl .cta:hover { background:var(--accent) !important; }
+
+/* HERO */
+.hero { padding-top:64px; min-height:100vh; display:flex; flex-direction:column; justify-content:center; background:var(--paper); border-bottom:1px solid var(--rule-s); }
+.hi { max-width:1280px; margin:0 auto; padding:5rem 5rem 6rem; display:grid; grid-template-columns:7fr 5fr; gap:6rem; align-items:end; }
+.eye { display:flex; align-items:center; gap:1.2rem; margin-bottom:2.5rem; }
+.eye-line { width:32px; height:1px; background:var(--accent); }
+h1.ht { margin-bottom:2.5rem; }
+h1.ht em { font-style:italic; color:var(--accent); }
+.hb { max-width:520px; font-size:1rem; line-height:1.85; color:var(--ink-soft); margin-bottom:3rem; }
+.ha { display:flex; gap:1.5rem; align-items:center; }
+.btn-p { display:inline-flex; align-items:center; gap:.6rem; padding:.85rem 2rem; background:var(--ink); color:var(--canvas); font-family:'Geist',sans-serif; font-size:.77rem; font-weight:500; letter-spacing:.04em; text-decoration:none; border-radius:2px; transition:background .2s; }
+.btn-p:hover { background:var(--accent); }
+.btn-t { font-size:.77rem; color:var(--ink-soft); text-decoration:underline; text-underline-offset:3px; text-decoration-color:var(--rule-s); }
+.btn-t:hover { color:var(--ink); }
+
+/* Cost card */
+.cc { background:var(--canvas); border:1px solid var(--rule-s); padding:2.5rem; }
+.cl { display:flex; justify-content:space-between; align-items:baseline; padding:.9rem 0; border-bottom:1px solid var(--rule); }
+.cl:last-of-type { border-bottom:none; }
+.cn { font-size:.81rem; color:var(--ink-soft); }
+.cv { font-family:'Cormorant Garamond',serif; font-size:1.75rem; font-weight:400; letter-spacing:-.02em; }
+.cv.r { color:var(--red); }
+.cv.g { color:var(--green); }
+.cd { border:none; border-top:2px solid var(--ink); margin:.5rem 0; }
+.cf { margin-top:1.1rem; font-family:'Geist Mono',monospace; font-size:.58rem; color:var(--ink-dim); letter-spacing:.07em; line-height:1.6; }
+
+/* PROOF BAR */
+.pb { background:var(--ink); }
+.pbi { max-width:1280px; margin:0 auto; padding:0 5rem; display:grid; grid-template-columns:repeat(4,1fr); border-left:1px solid rgba(255,255,255,.07); }
+.ps { padding:3rem 2rem; border-right:1px solid rgba(255,255,255,.07); }
+.pn { font-family:'Cormorant Garamond',serif; font-size:3.4rem; font-weight:300; color:#fff; letter-spacing:-.03em; line-height:1; margin-bottom:.4rem; }
+.pn span { font-size:1.4rem; color:rgba(255,255,255,.4); }
+.pl { font-size:.77rem; color:rgba(255,255,255,.45); line-height:1.5; }
+
+/* PROBLEM */
+.prob { background:var(--canvas); padding:7rem 0; }
+.pinn { max-width:1280px; margin:0 auto; padding:0 5rem; display:grid; grid-template-columns:1fr 1fr; gap:8rem; align-items:start; }
+.ph { position:sticky; top:90px; }
+.ph h2 { margin:1.5rem 0 2rem; }
+.pitems {}
+.pit { padding:2.5rem 0; border-bottom:1px solid var(--rule-s); display:grid; grid-template-columns:44px 1fr; gap:1.8rem; }
+.pit:first-child { border-top:1px solid var(--rule-s); }
+.pix { font-family:'Geist Mono',monospace; font-size:.63rem; color:var(--ink-dim); padding-top:.15rem; }
+.pit h4 { font-family:'Geist',sans-serif; font-size:.9rem; font-weight:500; color:var(--ink); margin-bottom:.55rem; }
+.pit p { font-size:.83rem; line-height:1.75; }
+
+/* SOLUTION */
+.sol { background:var(--paper); padding:7rem 0; }
+.sinn { max-width:1280px; margin:0 auto; padding:0 5rem; }
+.sh { display:grid; grid-template-columns:1fr 1fr; gap:8rem; margin-bottom:5rem; align-items:end; }
+.sh h2 { margin-top:1.5rem; }
+.steps { border-top:1px solid var(--rule-s); }
+.st { display:grid; grid-template-columns:80px 1fr 1fr; gap:3rem; padding:3rem 0; border-bottom:1px solid var(--rule); align-items:start; }
+.si { font-family:'Geist Mono',monospace; font-size:.63rem; color:var(--ink-dim); letter-spacing:.1em; padding-top:.15rem; }
+.sm h3 { font-family:'Geist',sans-serif; font-size:.97rem; font-weight:500; color:var(--ink); margin-bottom:.55rem; letter-spacing:-.01em; line-height:1.3; }
+.sm p { font-size:.83rem; line-height:1.75; }
+.badge { display:inline-block; padding:.22rem .55rem; background:var(--accent-d); border:1px solid rgba(13,41,102,.14); font-family:'Geist Mono',monospace; font-size:.58rem; letter-spacing:.1em; color:var(--accent); margin-bottom:.4rem; margin-right:.25rem; }
+.snote { margin-top:.9rem; font-size:.76rem; color:var(--ink-dim); font-style:italic; line-height:1.5; }
+.hv { background:var(--ink); padding:2.5rem 3rem; margin-top:3rem; display:grid; grid-template-columns:auto 1fr; gap:2.5rem; align-items:center; }
+.hvi { font-family:'Cormorant Garamond',serif; font-size:2.4rem; color:rgba(255,255,255,.25); line-height:1; }
+.hv h4 { font-family:'Geist',sans-serif; font-size:.88rem; font-weight:500; color:#fff; margin-bottom:.4rem; }
+.hv p { font-size:.81rem; color:rgba(255,255,255,.5); line-height:1.7; }
+
+/* VALUE */
+.val { background:var(--canvas); padding:7rem 0; }
+.vinn { max-width:1280px; margin:0 auto; padding:0 5rem; }
+.vh { margin-bottom:5rem; max-width:620px; }
+.vh h2 { margin:1.5rem 0 1.5rem; }
+.vg { display:grid; grid-template-columns:repeat(3,1fr); border-top:1px solid var(--rule-s); border-left:1px solid var(--rule-s); }
+.vc { padding:2.8rem 2.2rem; border-right:1px solid var(--rule-s); border-bottom:1px solid var(--rule-s); background:var(--paper); transition:background .25s; }
+.vc:hover { background:var(--accent-d); }
+.vn { font-family:'Cormorant Garamond',serif; font-size:3.1rem; font-weight:300; letter-spacing:-.03em; line-height:1; margin-bottom:.4rem; }
+.vn span { font-size:1.2rem; color:var(--ink-soft); }
+.vc h4 { font-family:'Geist',sans-serif; font-size:.83rem; font-weight:500; margin-bottom:.5rem; margin-top:.8rem; }
+.vc p { font-size:.77rem; line-height:1.7; }
+.roi { margin-top:3.5rem; padding:3.5rem; background:var(--paper); border:1px solid var(--rule-s); display:grid; grid-template-columns:1fr 1fr; gap:5rem; }
+.roi h3 { font-family:'Geist',sans-serif; font-size:.93rem; font-weight:500; margin:1.2rem 0; letter-spacing:-.01em; line-height:1.3; }
+.rt { width:100%; border-collapse:collapse; }
+.rt tr { border-bottom:1px solid var(--rule); }
+.rt tr:last-child { border-bottom:2px solid var(--ink); }
+.rt td { padding:.72rem 0; font-size:.81rem; color:var(--ink-soft); }
+.rt td:last-child { text-align:right; font-family:'Geist Mono',monospace; font-size:.77rem; color:var(--ink); }
+.rt tr.tot td { font-weight:500; color:var(--ink); padding-top:1rem; }
+.rt tr.tot td:last-child { color:var(--green); font-size:.86rem; }
+.roi-fn { margin-top:1rem; font-family:'Geist Mono',monospace; font-size:.58rem; color:var(--ink-dim); letter-spacing:.06em; line-height:1.6; }
+
+/* CONTACT */
+.ctsec { background:var(--paper); }
+.ctg { display:grid; grid-template-columns:5fr 7fr; min-height:90vh; }
+.ctl { background:var(--ink); padding:7rem 4rem; display:flex; flex-direction:column; justify-content:space-between; }
+.ctl h2 { color:#fff; font-size:clamp(1.9rem,3vw,3.1rem); margin-top:1.5rem; margin-bottom:2rem; }
+.ctl h2 em { color:rgba(255,255,255,.3); }
+.ctb { font-size:.87rem; color:rgba(255,255,255,.45); line-height:1.8; max-width:360px; }
+.coms { margin-top:3.5rem; display:flex; flex-direction:column; gap:1.8rem; }
+.com { display:flex; gap:1.2rem; align-items:flex-start; }
+.com-dot { width:6px; height:6px; background:var(--warm); border-radius:50%; flex-shrink:0; margin-top:.35rem; }
+.com strong { display:block; font-size:.81rem; font-weight:500; color:#fff; margin-bottom:.2rem; }
+.com span { font-size:.74rem; color:rgba(255,255,255,.38); line-height:1.5; }
+.ctfoot { margin-top:auto; padding-top:4rem; font-family:'Geist Mono',monospace; font-size:.58rem; color:rgba(255,255,255,.18); letter-spacing:.15em; }
+.ctr { padding:7rem 5rem; overflow-y:auto; }
+.ctr .lbl { margin-bottom:2.5rem; }
+
+/* Form progress */
+.fp { display:flex; align-items:center; gap:0; margin-bottom:3.5rem; }
+.fps { display:flex; align-items:center; gap:.65rem; opacity:.28; transition:opacity .3s; }
+.fps.on { opacity:1; }
+.fpd { width:26px; height:26px; border-radius:50%; border:1px solid var(--rule-s); display:flex; align-items:center; justify-content:center; font-family:'Geist Mono',monospace; font-size:.63rem; color:var(--ink-dim); flex-shrink:0; transition:all .3s; }
+.fps.on .fpd { background:var(--ink); border-color:var(--ink); color:var(--canvas); }
+.fpl { font-size:.71rem; color:var(--ink-soft); white-space:nowrap; }
+.fps.on .fpl { color:var(--ink); font-weight:500; }
+.fpl-c { flex:1; height:1px; background:var(--rule-s); margin:0 .9rem; min-width:14px; }
+
+.fs { display:none; }
+.fs.on { display:block; }
+.fst { font-family:'Cormorant Garamond',serif; font-size:1.8rem; font-weight:300; color:var(--ink); margin-bottom:2.5rem; letter-spacing:-.02em; }
+.fg { margin-bottom:1.9rem; }
+.fl { display:block; font-family:'Geist Mono',monospace; font-size:.63rem; letter-spacing:.15em; text-transform:uppercase; color:var(--ink-dim); margin-bottom:.8rem; }
+.req { color:var(--accent); }
+
+/* Opt grids */
+.og { display:grid; gap:1px; background:var(--rule-s); border:1px solid var(--rule-s); }
+.og.c3 { grid-template-columns:repeat(3,1fr); }
+.og.c2 { grid-template-columns:repeat(2,1fr); }
+.oi { padding:1.35rem 1.1rem; background:var(--paper); cursor:pointer; transition:background .15s; }
+.oi:hover { background:#f0eeea; }
+.oi.sel { background:var(--ink); }
+.oi-ico { font-size:1.05rem; margin-bottom:.45rem; }
+.oi-t { font-size:.77rem; font-weight:500; color:var(--ink); line-height:1.3; }
+.oi-s { font-size:.63rem; color:var(--ink-dim); margin-top:.2rem; }
+.oi.sel .oi-t { color:rgba(255,255,255,.92); }
+.oi.sel .oi-s { color:rgba(255,255,255,.45); }
+
+/* Persona rows */
+.pr-w { display:flex; flex-direction:column; gap:1px; background:var(--rule-s); border:1px solid var(--rule-s); }
+.pr { display:grid; grid-template-columns:46px 1fr 22px; gap:1.1rem; align-items:center; padding:1.25rem 1.35rem; background:var(--paper); cursor:pointer; transition:background .15s; }
+.pr:hover { background:#f4f3ef; }
+.pr.sel { background:var(--accent-d); }
+.p-ico { font-size:1.15rem; text-align:center; }
+.p-t { font-size:.81rem; font-weight:500; color:var(--ink); margin-bottom:.2rem; }
+.p-d { font-size:.71rem; color:var(--ink-dim); line-height:1.4; }
+.p-ck { width:19px; height:19px; border-radius:50%; border:1px solid var(--rule-s); display:flex; align-items:center; justify-content:center; font-size:.58rem; color:transparent; transition:all .2s; }
+.pr.sel .p-ck { background:var(--ink); border-color:var(--ink); color:var(--canvas); }
+
+/* Inputs */
+.fi,.fsel,.fta { width:100%; padding:.78rem 1rem; background:var(--paper); border:1px solid var(--rule-s); color:var(--ink); font-family:'Geist',sans-serif; font-size:.83rem; font-weight:300; appearance:none; transition:border-color .2s; border-radius:0; }
+.fi::placeholder,.fta::placeholder { color:var(--ink-dim); }
+.fi:focus,.fsel:focus,.fta:focus { outline:none; border-color:var(--ink); }
+.fsel { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7' viewBox='0 0 11 7'%3E%3Cpath d='M1 1l4.5 4.5L10 1' stroke='%237a7f8e' fill='none' stroke-width='1.4'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right .9rem center; }
+.fta { resize:vertical; min-height:78px; }
+.fr { display:grid; grid-template-columns:1fr 1fr; gap:1.1rem; }
+
+/* Scope grid */
+.scg { display:grid; grid-template-columns:repeat(2,1fr); gap:1px; background:var(--rule-s); border:1px solid var(--rule-s); }
+.sci { padding:1.15rem 1.35rem; background:var(--paper); cursor:pointer; transition:background .15s; display:flex; gap:.75rem; align-items:flex-start; }
+.sci:hover { background:#f4f3ef; }
+.sci.sel { background:var(--accent-d); }
+.scb { width:15px; height:15px; border:1px solid var(--rule-s); flex-shrink:0; margin-top:.15rem; display:flex; align-items:center; justify-content:center; font-size:.6rem; color:transparent; transition:all .15s; }
+.sci.sel .scb { background:var(--ink); border-color:var(--ink); color:var(--canvas); }
+.sc-t { font-size:.79rem; font-weight:500; color:var(--ink); margin-bottom:.2rem; }
+.sc-d { font-size:.67rem; color:var(--ink-dim); }
+
+/* Tags */
+.tg-g { display:flex; flex-wrap:wrap; gap:.38rem; }
+.tg { padding:.35rem .82rem; border:1px solid var(--rule-s); font-size:.71rem; font-weight:400; color:var(--ink-soft); background:var(--paper); cursor:pointer; transition:all .15s; }
+.tg:hover { border-color:var(--ink); color:var(--ink); }
+.tg.sel { background:var(--ink); border-color:var(--ink); color:var(--canvas); }
+
+/* Slider */
+.slw { margin-top:.5rem; }
+.slvr { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:.4rem; }
+.slv { font-family:'Cormorant Garamond',serif; font-size:2.4rem; font-weight:300; color:var(--ink); line-height:1; }
+.slu { font-size:.73rem; color:var(--ink-dim); }
+.fsl { width:100%; -webkit-appearance:none; height:2px; background:var(--rule-s); cursor:pointer; margin-bottom:.5rem; }
+.fsl::-webkit-slider-thumb { -webkit-appearance:none; width:15px; height:15px; border-radius:50%; background:var(--ink); border:2px solid var(--canvas); box-shadow:0 0 0 1px var(--ink); }
+.sle { display:flex; justify-content:space-between; font-family:'Geist Mono',monospace; font-size:.57rem; color:var(--ink-dim); letter-spacing:.04em; }
+
+/* Consent */
+.conr { display:flex; gap:.8rem; align-items:flex-start; }
+.conr input[type=checkbox] { width:14px; height:14px; accent-color:var(--ink); flex-shrink:0; margin-top:.15rem; }
+.conr span { font-size:.72rem; color:var(--ink-dim); line-height:1.5; }
+
+/* Buttons */
+.fbr { display:flex; gap:1rem; margin-top:2.5rem; align-items:center; }
+.fbn,.fbs { padding:.78rem 1.9rem; border:none; border-radius:0; font-family:'Geist',sans-serif; font-size:.77rem; font-weight:500; cursor:pointer; letter-spacing:.04em; transition:background .2s; }
+.fbn { background:var(--ink); color:var(--canvas); }
+.fbn:hover { background:var(--accent); }
+.fbs { background:var(--accent); color:var(--canvas); }
+.fbs:hover { background:var(--ink); }
+.fbb { padding:.78rem 1.5rem; background:transparent; border:1px solid var(--rule-s); font-family:'Geist',sans-serif; font-size:.74rem; color:var(--ink-soft); cursor:pointer; transition:all .2s; border-radius:0; }
+.fbb:hover { border-color:var(--ink); color:var(--ink); }
+
+/* Success */
+.fsucc { display:none; }
+.fsucc.on { display:block; }
+.sck { width:50px; height:50px; border:1px solid var(--ink); display:flex; align-items:center; justify-content:center; font-size:1.15rem; margin-bottom:1.8rem; }
+.sct { font-family:'Cormorant Garamond',serif; font-size:1.9rem; font-weight:300; color:var(--ink); margin-bottom:.9rem; }
+.scp { font-size:.84rem; color:var(--ink-soft); line-height:1.8; max-width:420px; }
+.scm { margin-top:2.5rem; border-top:1px solid var(--rule-s); padding-top:2rem; display:flex; flex-direction:column; gap:.8rem; }
+.scr { display:flex; gap:1.5rem; align-items:center; }
+.sclbl { font-family:'Geist Mono',monospace; font-size:.58rem; letter-spacing:.12em; color:var(--ink-dim); min-width:110px; }
+.scval { font-size:.81rem; color:var(--ink); }
+
+/* FOOTER */
+footer { background:var(--ink); }
+.fi-f { max-width:1280px; margin:0 auto; padding:2.5rem 5rem; display:flex; justify-content:space-between; align-items:center; }
+.flog { font-family:'Cormorant Garamond',serif; font-size:1.2rem; color:rgba(255,255,255,.65); }
+.fcp { font-family:'Geist Mono',monospace; font-size:.58rem; letter-spacing:.09em; color:rgba(255,255,255,.3); }
+.fls { display:flex; gap:2.5rem; }
+.fls a { font-size:.71rem; color:rgba(255,255,255,.3); text-decoration:none; transition:color .2s; }
+.fls a:hover { color:rgba(255,255,255,.65); }
+
+/* Reveal */
+.rv { opacity:0; transform:translateY(18px); transition:opacity .6s ease, transform .6s ease; }
+.rv.in { opacity:1; transform:none; }
+.rv:nth-child(2){transition-delay:.07s}
+.rv:nth-child(3){transition-delay:.13s}
+.rv:nth-child(4){transition-delay:.19s}
+
+/* Responsive */
+@media(max-width:1024px){
+  .ni,.hi,.pinn,.sinn,.vinn,.fi-f{padding-left:2rem;padding-right:2rem}
+  .hi,.pinn,.sh{grid-template-columns:1fr;gap:2.5rem}
+  .pbi{grid-template-columns:repeat(2,1fr)}
+  .st{grid-template-columns:44px 1fr}
+  .st .sme{grid-column:2}
+  .vg{grid-template-columns:repeat(2,1fr)}
+  .roi{grid-template-columns:1fr;gap:2rem}
+  .ctg{grid-template-columns:1fr}
+  .ctl{padding:4rem 2rem}
+  .ctr{padding:4rem 2rem}
+  .og.c3{grid-template-columns:repeat(2,1fr)}
+  .fr{grid-template-columns:1fr}
+  .nl .cta{display:none}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="ni">
+    <a href="#" class="logo">Nodus<sup>®</sup></a>
+    <div class="nl">
+      <a href="#solution">Solution</a>
+      <a href="#valeur">Valeur</a>
+      <a href="#contact">Contact</a>
+      <a href="#contact" class="cta">Demander une démonstration</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hi">
+    <div>
+      <div class="eye rv">
+        <div class="eye-line"></div>
+        <span class="lbl ac">Reporting réglementaire · Solvabilité II · IFRS 17</span>
+      </div>
+      <h1 class="ht rv">La conformité<br>réglementaire<br><em>sans la friction.</em></h1>
+      <p class="hb rv">Nodus automatise l'intégralité du cycle de reporting prudentiel — de l'ingestion des données sources à la transmission au régulateur. Vos analystes de conformité supervisent. L'IA calcule, détecte, valide.</p>
+      <div class="ha rv">
+        <a href="#contact" class="btn-p">Demander une démonstration →</a>
+        <a href="#solution" class="btn-t">Voir comment ça fonctionne</a>
+      </div>
+    </div>
+    <div class="rv">
+      <div class="cc">
+        <div style="margin-bottom:1.8rem"><span class="lbl">Coût réel du reporting · Par entité · Par an</span></div>
+        <div class="cl"><span class="cn">Équivalents temps plein mobilisés</span><span class="cv r">3–5 ETP</span></div>
+        <div class="cl"><span class="cn">Jours analytiques par cycle</span><span class="cv r">60–80 j</span></div>
+        <div class="cl"><span class="cn">Coût salarial chargé — analyste senior</span><span class="cv r">~95 K€</span></div>
+        <div class="cl"><span class="cn">Risque de sanction régulatoire</span><span class="cv r">≤10% CA</span></div>
+        <hr class="cd">
+        <div class="cl"><span class="cn">Coût évité avec Nodus</span><span class="cv g">–70%</span></div>
+        <p class="cf">Sources : Larson Maddox Compliance Salary Guide Europe 2026 · Dir. Solvabilité II Art. 260 · 15 entretiens terrain responsables conformité assurance</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="r">
+
+<!-- PROOF BAR -->
+<div class="pb">
+  <div class="pbi">
+    <div class="ps rv"><div class="pn">70<span>%</span></div><div class="pl">d'analyse documentaire automatisée par l'IA</div></div>
+    <div class="ps rv"><div class="pn">2<span>,400</span></div><div class="pl">assureurs européens soumis à Solvabilité II</div></div>
+    <div class="ps rv"><div class="pn">95<span>K€</span></div><div class="pl">coût annuel moyen d'un analyste conformité senior Europe</div></div>
+    <div class="ps rv"><div class="pn">100<span>%</span></div><div class="pl">validation humaine maintenue sur chaque soumission</div></div>
+  </div>
+</div>
+
+<!-- PROBLEM -->
+<section class="prob" id="probleme">
+  <div class="pinn">
+    <div class="ph rv">
+      <span class="lbl">Le problème</span>
+      <h2 style="margin:1.5rem 0 2rem">Le reporting réglementaire mobilise vos équipes les plus expertes sur des tâches à faible valeur ajoutée.</h2>
+      <p>Solvabilité II et IFRS 17 exigent des rapports prudentiels trimestriels d'une complexité croissante. La consolidation est manuelle. Les risques sont réels et sous-estimés.</p>
+    </div>
+    <div class="pitems">
+      <div class="pit rv">
+        <span class="pix lbl">01</span>
+        <div><h4>Dispersion des données entre systèmes hétérogènes</h4><p>Vos départements actuariat, comptabilité et finance opèrent sur des systèmes distincts. La consolidation mobilise plusieurs équipes pendant plusieurs semaines — chaque trimestre, depuis zéro.</p></div>
+      </div>
+      <div class="pit rv">
+        <span class="pix lbl">02</span>
+        <div><h4>Risque opérationnel à chaque cycle</h4><p>Une erreur dans un formulaire prudentiel peut déclencher un contrôle ORSA anticipé ou une sanction atteignant 10 % du chiffre d'affaires. La pression sur vos analystes de conformité est structurellement élevée et s'intensifie à chaque exercice.</p></div>
+      </div>
+      <div class="pit rv">
+        <span class="pix lbl">03</span>
+        <div><h4>Coût caché des équivalents temps plein</h4><p>Chaque cycle mobilise 3 à 5 ETP pendant 15 à 20 jours ouvrés. À 95 000 € de coût salarial chargé par analyste senior, le coût réel du reporting dépasse 180 000 € par entité et par an — hors coût de correction post-contrôle.</p></div>
+      </div>
+      <div class="pit rv">
+        <span class="pix lbl">04</span>
+        <div><h4>Pression réglementaire croissante et non-linéaire</h4><p>IFRS 17, CSRD, DORA s'ajoutent à Solvabilité II. Le périmètre de conformité s'étend tandis que les ressources spécialisées restent contraintes. Vos équipes ne peuvent pas absorber la prochaine vague réglementaire avec les mêmes méthodes.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="r">
+
+<!-- SOLUTION -->
+<section class="sol" id="solution">
+  <div class="sinn">
+    <div class="sh">
+      <div class="rv"><span class="lbl">La solution</span><h2 style="margin-top:1.5rem">L'IA calcule.<br>Vos analystes décident.</h2></div>
+      <div class="rv"><p>Nodus s'intègre à vos systèmes sources existants et automatise l'intégralité du pipeline de données prudentielles. La supervision humaine reste au cœur du processus — augmentée, non remplacée.</p></div>
+    </div>
+    <div class="steps">
+      <div class="st rv">
+        <span class="si lbl">01</span>
+        <div class="sm"><h3>Ingestion automatisée depuis vos systèmes existants</h3><p>Connexion native aux systèmes actuariels et comptables via API sécurisée. Les données brutes sont extraites, normalisées et versionnées sans intervention manuelle.</p></div>
+        <div class="sme"><span class="badge">SAP</span><span class="badge">Oracle</span><span class="badge">Prophet</span><span class="badge">ResQ</span><span class="badge">MoSes</span><span class="badge">TAS</span><p class="snote">Piste d'audit complète sur chaque opération de transformation.</p></div>
+      </div>
+      <div class="st rv">
+        <span class="si lbl">02</span>
+        <div class="sm"><h3>Calcul et validation par le moteur IA</h3><p>L'IA applique l'ensemble des règles prudentielles en vigueur — cohérence entre formulaires, seuils réglementaires, calculs de provisions techniques, Best Estimate, ratios de solvabilité. Chaque anomalie est documentée avec sa référence réglementaire exacte et transmise à l'analyste de conformité responsable.</p></div>
+        <div class="sme"><span class="badge">Solvabilité II</span><span class="badge">IFRS 17</span><span class="badge">Règles EIOPA</span><p class="snote">Réduction de 70 % du temps d'analyse documentaire. Anomalies détectées : écarts de provisions, ratios de sinistralité, fonds propres, ratios de solvabilité.</p></div>
+      </div>
+      <div class="st rv">
+        <span class="si lbl">03</span>
+        <div class="sm"><h3>Génération des formulaires prudentiels au format réglementaire</h3><p>Production automatique des états dans les formats requis par les régulateurs nationaux. Le rapport narratif annuel est pré-généré sur la base des calculs validés.</p></div>
+        <div class="sme"><span class="badge">XBRL</span><span class="badge">ACPR</span><span class="badge">BaFin</span><span class="badge">CSSF</span><p class="snote">Compatible avec l'ensemble des portails de transmission réglementaires européens.</p></div>
+      </div>
+    </div>
+    <div class="hv rv">
+      <div class="hvi">④</div>
+      <div>
+        <h4>Validation finale par l'analyste de conformité — étape non automatisée par principe</h4>
+        <p>L'analyste de conformité désigné revoit l'ensemble des anomalies détectées, valide les calculs et signe la soumission. Nodus fournit le contexte réglementaire, les calculs contradictoires et les recommandations. La décision finale appartient à votre équipe — conformément aux exigences de gouvernance et aux attentes de votre régulateur.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="r">
+
+<!-- VALUE -->
+<section class="val" id="valeur">
+  <div class="vinn">
+    <div class="vh">
+      <span class="lbl rv">Valeur mesurable</span>
+      <h2 class="rv">Ce que vos équipes récupèrent.</h2>
+      <p class="rv">Gains calculés sur la base des coûts salariaux européens de la conformité assurance et du volume de travail observé sur 15 entretiens terrain.</p>
+    </div>
+    <div class="vg">
+      <div class="vc rv"><div class="vn">70<span>%</span></div><h4>Réduction du temps d'analyse documentaire</h4><p>L'IA traite la collecte, la normalisation et la première passe de validation. Vos analystes se concentrent sur l'interprétation et la décision réglementaire.</p></div>
+      <div class="vc rv"><div class="vn">–3<span> ETP</span></div><h4>Équivalents temps plein réaffectables</h4><p>Sur un cycle trimestriel standard, 3 à 4 ETP sont libérés des tâches de consolidation manuelle et réorientés vers des missions à valeur ajoutée.</p></div>
+      <div class="vc rv"><div class="vn">0</div><h4>Soumission sans anomalie non traitée</h4><p>Chaque formulaire transmis au régulateur a fait l'objet d'une vérification systématique par l'IA et d'une validation explicite par l'analyste responsable.</p></div>
+      <div class="vc rv"><div class="vn">100<span>%</span></div><h4>Traçabilité et piste d'audit</h4><p>Chaque calcul, chaque transformation, chaque décision de validation est horodatée et archivée. Votre dossier ORSA est constitué en temps réel.</p></div>
+      <div class="vc rv"><div class="vn">1<span> cycle</span></div><h4>Intégration opérationnelle sur un cycle complet</h4><p>Conçu pour s'intégrer dans votre calendrier réglementaire existant, sans refonte des processus ni migration des systèmes sources.</p></div>
+      <div class="vc rv"><div class="vn">+4<span> périm.</span></div><h4>Extension à IFRS 17, CSRD, DORA</h4><p>L'architecture Nodus couvre l'ensemble des obligations déclaratives prudentielles européennes. Un seul point d'accès pour votre périmètre de conformité.</p></div>
+    </div>
+    <div class="roi rv">
+      <div>
+        <span class="lbl">Calcul du coût évité</span>
+        <h3>Économie annuelle estimée par entité</h3>
+        <p>Basé sur un département de 6 personnes dont 3 analystes seniors consacrant 40 % de leur temps au reporting réglementaire.</p>
+      </div>
+      <div>
+        <table class="rt">
+          <tr><td>Coût salarial chargé × 3 analystes seniors</td><td>285 000 €</td></tr>
+          <tr><td>Part consacrée au reporting (40 %)</td><td>114 000 €</td></tr>
+          <tr><td>Réduction par automatisation IA (70 %)</td><td>− 79 800 €</td></tr>
+          <tr><td>Coût moyen de correction post-contrôle</td><td>~ 25 000 €</td></tr>
+          <tr class="tot"><td>Économie totale estimée / an</td><td>~ 105 000 €</td></tr>
+        </table>
+        <p class="roi-fn">Hypothèses : coût salarial chargé moyen analyste conformité senior France/Luxembourg 95 000 € (Larson Maddox 2026) · 15 entretiens terrain · 4 cycles annuels. Indicatif — analyse personnalisée lors de la démonstration.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="r">
+
+<!-- CONTACT -->
+<section class="ctsec" id="contact">
+  <div class="ctg">
+    <div class="ctl">
+      <div>
+        <span class="lbl" style="color:rgba(255,255,255,.28)">Démonstration</span>
+        <h2>Parlons de votre <em>organisation.</em></h2>
+        <p class="ctb">Un interlocuteur Nodus vous contacte pour une démonstration adaptée à votre contexte réglementaire, votre architecture de données et votre périmètre de conformité.</p>
+        <div class="coms">
+          <div class="com"><div class="com-dot"></div><div><strong>Démonstration sur données réelles</strong><span>Nous préparons la démonstration sur votre périmètre réglementaire spécifique</span></div></div>
+          <div class="com"><div class="com-dot"></div><div><strong>Interlocuteur spécialisé assurance</strong><span>Expertise prudentielle, pas un profil commercial généraliste</span></div></div>
+          <div class="com"><div class="com-dot"></div><div><strong>Analyse de coût personnalisée</strong><span>Modélisation du coût évité sur la base de la taille réelle de votre département conformité</span></div></div>
+        </div>
+      </div>
+      <div class="ctfoot">NODUS REGTECH · LUXEMBOURG · PARIS · © 2026</div>
+    </div>
+
+    <div class="ctr">
+      <span class="lbl">Votre demande</span>
+      <div class="fp">
+        <div class="fps on" id="fp1"><div class="fpd">1</div><span class="fpl">Organisation</span></div>
+        <div class="fpl-c"></div>
+        <div class="fps" id="fp2"><div class="fpd">2</div><span class="fpl">Contexte</span></div>
+        <div class="fpl-c"></div>
+        <div class="fps" id="fp3"><div class="fpd">3</div><span class="fpl">Coordonnées</span></div>
+      </div>
+
+      <!-- S1 -->
+      <div class="fs on" id="fs1">
+        <h2 class="fst">Votre organisation</h2>
+        <div class="fg">
+          <label class="fl">Type d'entité <span class="req">*</span></label>
+          <div class="og c3" id="g-ent">
+            <div class="oi" data-v="mutuelle" onclick="selO(this,'g-ent')"><div class="oi-ico">🏛</div><div class="oi-t">Mutuelle</div><div class="oi-s">&lt; 500 M€ de bilan</div></div>
+            <div class="oi" data-v="assureur" onclick="selO(this,'g-ent')"><div class="oi-ico">🏢</div><div class="oi-t">Assureur</div><div class="oi-s">Vie, IARD, mixte</div></div>
+            <div class="oi" data-v="groupe" onclick="selO(this,'g-ent')"><div class="oi-ico">🌐</div><div class="oi-t">Groupe / Holding</div><div class="oi-s">Multi-entités</div></div>
+            <div class="oi" data-v="reassureur" onclick="selO(this,'g-ent')"><div class="oi-ico">🔄</div><div class="oi-t">Réassureur</div><div class="oi-s">Captive incluse</div></div>
+            <div class="oi" data-v="filiale" onclick="selO(this,'g-ent')"><div class="oi-ico">📌</div><div class="oi-t">Filiale</div><div class="oi-s">Entité d'un grand groupe</div></div>
+            <div class="oi" data-v="conseil" onclick="selO(this,'g-ent')"><div class="oi-ico">💼</div><div class="oi-t">Cabinet conseil</div><div class="oi-s">Pour le compte de clients</div></div>
+          </div>
+        </div>
+        <div class="fg">
+          <label class="fl">Fonction <span class="req">*</span></label>
+          <div class="pr-w" id="g-role">
+            <div class="pr" data-v="cro" onclick="selP(this,'g-role')"><div class="p-ico">⚖️</div><div><div class="p-t">Directeur des Risques / CRO</div><div class="p-d">Pilotage ORSA, supervision du dispositif prudentiel, relation régulateur</div></div><div class="p-ck">✓</div></div>
+            <div class="pr" data-v="conform" onclick="selP(this,'g-role')"><div class="p-ico">📋</div><div><div class="p-t">Responsable Conformité</div><div class="p-d">Production des états prudentiels, coordination actuariat et comptabilité</div></div><div class="p-ck">✓</div></div>
+            <div class="pr" data-v="actua" onclick="selP(this,'g-role')"><div class="p-ico">📐</div><div><div class="p-t">Directeur Actuariat</div><div class="p-d">Calcul des provisions techniques, Best Estimate, validation des modèles</div></div><div class="p-ck">✓</div></div>
+            <div class="pr" data-v="daf" onclick="selP(this,'g-role')"><div class="p-ico">💰</div><div><div class="p-t">Directeur Financier / DAF</div><div class="p-d">Reporting IFRS 17, supervision des états financiers réglementaires</div></div><div class="p-ck">✓</div></div>
+            <div class="pr" data-v="dsi" onclick="selP(this,'g-role')"><div class="p-ico">⚙️</div><div><div class="p-t">Directeur des Systèmes d'Information</div><div class="p-d">Architecture de données, intégration des systèmes sources, gouvernance data</div></div><div class="p-ck">✓</div></div>
+            <div class="pr" data-v="dir" onclick="selP(this,'g-role')"><div class="p-ico">👤</div><div><div class="p-t">Dirigeant exécutif</div><div class="p-d">Directeur Général, membre du Comité Exécutif</div></div><div class="p-ck">✓</div></div>
+          </div>
+        </div>
+        <div class="fr">
+          <div class="fg"><label class="fl">Pays <span class="req">*</span></label><select class="fsel"><option value="">Sélectionner…</option><option>France</option><option>Luxembourg</option><option>Belgique</option><option>Allemagne</option><option>Suisse</option><option>Pays-Bas</option><option>Irlande</option><option>Autre</option></select></div>
+          <div class="fg"><label class="fl">Bilan consolidé</label><select class="fsel"><option value="">Sélectionner…</option><option>&lt; 500 M€</option><option>500 M€ — 2 Md€</option><option>2 Md€ — 10 Md€</option><option>&gt; 10 Md€</option></select></div>
+        </div>
+        <div class="fbr"><button class="fbn" onclick="gs(2)">Continuer →</button></div>
+      </div>
+
+      <!-- S2 -->
+      <div class="fs" id="fs2">
+        <h2 class="fst">Contexte réglementaire</h2>
+        <div class="fg">
+          <label class="fl">Périmètre réglementaire <span class="req">*</span></label>
+          <div class="scg" id="g-scope">
+            <div class="sci sel" onclick="togSc(this)"><div class="scb">✓</div><div><div class="sc-t">Solvabilité II</div><div class="sc-d">Formulaires prudentiels trimestriels et annuels</div></div></div>
+            <div class="sci" onclick="togSc(this)"><div class="scb">✓</div><div><div class="sc-t">IFRS 17</div><div class="sc-d">Groupes de contrats, marge de service contractuelle</div></div></div>
+            <div class="sci" onclick="togSc(this)"><div class="scb">✓</div><div><div class="sc-t">CSRD</div><div class="sc-d">Reporting de durabilité</div></div></div>
+            <div class="sci" onclick="togSc(this)"><div class="scb">✓</div><div><div class="sc-t">DORA</div><div class="sc-d">Résilience opérationnelle numérique</div></div></div>
+          </div>
+        </div>
+        <div class="fg">
+          <label class="fl">Systèmes actuariels et comptables</label>
+          <div class="tg-g" id="g-sys">
+            <div class="tg" onclick="togT(this)">SAP</div><div class="tg" onclick="togT(this)">Oracle Financials</div><div class="tg" onclick="togT(this)">Prophet</div><div class="tg" onclick="togT(this)">ResQ</div><div class="tg" onclick="togT(this)">MoSes</div><div class="tg" onclick="togT(this)">Igloo</div><div class="tg" onclick="togT(this)">Towers Watson TAS</div><div class="tg" onclick="togT(this)">Wolters Kluwer OneSumX</div><div class="tg" onclick="togT(this)">Moody's Analytics</div><div class="tg" onclick="togT(this)">Excel / Manuel</div>
+          </div>
+        </div>
+        <div class="fg">
+          <label class="fl">Taille du département conformité</label>
+          <div class="og c2" id="g-dept">
+            <div class="oi" data-v="1-3" onclick="selO(this,'g-dept')"><div class="oi-t">1 — 3 personnes</div><div class="oi-s">Structure légère</div></div>
+            <div class="oi" data-v="4-8" onclick="selO(this,'g-dept')"><div class="oi-t">4 — 8 personnes</div><div class="oi-s">Département dédié</div></div>
+            <div class="oi" data-v="9-20" onclick="selO(this,'g-dept')"><div class="oi-t">9 — 20 personnes</div><div class="oi-s">Équipe structurée</div></div>
+            <div class="oi" data-v="20+" onclick="selO(this,'g-dept')"><div class="oi-t">Plus de 20 personnes</div><div class="oi-s">Département étendu</div></div>
+          </div>
+        </div>
+        <div class="fg">
+          <label class="fl">Jours ouvrés mobilisés par cycle de reporting</label>
+          <div class="slw">
+            <div class="slvr"><span class="slv" id="slV">15</span><span class="slu">jours / cycle trimestriel</span></div>
+            <input type="range" class="fsl" id="sl" min="1" max="60" value="15" oninput="document.getElementById('slV').textContent=this.value">
+            <div class="sle"><span>1 j</span><span>30 j</span><span>60 j+</span></div>
+          </div>
+        </div>
+        <div class="fg">
+          <label class="fl">Priorité principale</label>
+          <div class="tg-g" id="g-prio">
+            <div class="tg" onclick="selT(this,'g-prio')">Réduire le coût ETP</div><div class="tg" onclick="selT(this,'g-prio')">Éliminer le risque d'erreur</div><div class="tg" onclick="selT(this,'g-prio')">Préparer un contrôle ORSA</div><div class="tg" onclick="selT(this,'g-prio')">Absorber IFRS 17</div><div class="tg" onclick="selT(this,'g-prio')">Consolidation multi-entités</div><div class="tg" onclick="selT(this,'g-prio')">Gouvernance data</div>
+          </div>
+        </div>
+        <div class="fg"><label class="fl">Contexte ou question spécifique</label><textarea class="fta" rows="3" placeholder="Architecture de données actuelle, fréquence des corrections post-soumission, calendrier de projet…"></textarea></div>
+        <div class="fbr"><button class="fbb" onclick="gs(1)">← Retour</button><button class="fbn" onclick="gs(3)">Continuer →</button></div>
+      </div>
+
+      <!-- S3 -->
+      <div class="fs" id="fs3">
+        <h2 class="fst">Vos coordonnées</h2>
+        <div class="fr">
+          <div class="fg"><label class="fl">Prénom <span class="req">*</span></label><input type="text" class="fi" id="fn" placeholder="Jean"></div>
+          <div class="fg"><label class="fl">Nom <span class="req">*</span></label><input type="text" class="fi" placeholder="Dupont"></div>
+        </div>
+        <div class="fg"><label class="fl">Adresse email professionnelle <span class="req">*</span></label><input type="email" class="fi" id="em" placeholder="jean.dupont@compagnie.fr"></div>
+        <div class="fr">
+          <div class="fg"><label class="fl">Société <span class="req">*</span></label><input type="text" class="fi" placeholder="Nom de l'entité"></div>
+          <div class="fg"><label class="fl">Téléphone direct</label><input type="tel" class="fi" placeholder="+33 1 00 00 00 00"></div>
+        </div>
+        <div class="fg">
+          <label class="fl">Horizon de projet</label>
+          <div class="tg-g" id="g-hor">
+            <div class="tg" onclick="selT(this,'g-hor')">Prochain cycle (urgent)</div><div class="tg" onclick="selT(this,'g-hor')">Avant fin d'exercice</div><div class="tg" onclick="selT(this,'g-hor')">Semestre prochain</div><div class="tg" onclick="selT(this,'g-hor')">Phase d'exploration</div>
+          </div>
+        </div>
+        <div class="fg"><div class="conr"><input type="checkbox" id="con"><span>J'accepte que Nodus utilise ces informations pour traiter ma demande. Aucune donnée n'est transmise à des tiers.</span></div></div>
+        <div class="fbr"><button class="fbb" onclick="gs(2)">← Retour</button><button class="fbs" onclick="sub()" id="sb">Envoyer la demande</button></div>
+      </div>
+
+      <!-- SUCCESS -->
+      <div class="fsucc" id="fsucc">
+        <div class="sck">✓</div>
+        <h2 class="sct">Demande enregistrée.</h2>
+        <p class="scp">Un interlocuteur Nodus spécialisé en conformité assurance vous contactera pour convenir d'une démonstration adaptée à votre périmètre réglementaire.</p>
+        <div class="scm">
+          <div class="scr"><span class="sclbl">PROCHAINE ÉTAPE</span><span class="scval">Entretien de qualification — 30 minutes</span></div>
+          <div class="scr"><span class="sclbl">DÉLAI</span><span class="scval">Sous 48 heures ouvrées</span></div>
+          <div class="scr"><span class="sclbl">CONTACT</span><span class="scval">contact@nodus.io</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="fi-f">
+    <div class="flog">Nodus</div>
+    <div class="fls"><a href="#">Politique de confidentialité</a><a href="#">Mentions légales</a><a href="#contact">Contact</a></div>
+    <div class="fcp">© 2026 NODUS REGTECH · LUXEMBOURG · PARIS</div>
+  </div>
+</footer>
+
+<script>
+window.addEventListener('scroll',()=>{
+  document.querySelector('nav').style.borderBottomColor=window.scrollY>20?'rgba(13,15,20,.15)':'rgba(13,15,20,.08)';
+});
+const ro=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('in');}),{threshold:.07});
+document.querySelectorAll('.rv').forEach(el=>ro.observe(el));
+
+let stp=1;
+function gs(n){
+  document.getElementById('fs'+stp).classList.remove('on');
+  document.getElementById('fp'+stp).classList.remove('on');
+  stp=n;
+  document.getElementById('fs'+n).classList.add('on');
+  document.getElementById('fp'+n).classList.add('on');
+  document.querySelector('.ctr').scrollTo({top:0,behavior:'smooth'});
+}
+function selO(el,g){document.querySelectorAll('#'+g+' .oi').forEach(i=>i.classList.remove('sel'));el.classList.add('sel');}
+function selP(el,g){document.querySelectorAll('#'+g+' .pr').forEach(i=>i.classList.remove('sel'));el.classList.add('sel');}
+function togSc(el){el.classList.toggle('sel');el.querySelector('.scb').textContent=el.classList.contains('sel')?'✓':'';}
+function togT(el){el.classList.toggle('sel');}
+function selT(el,g){document.querySelectorAll('#'+g+' .tg').forEach(t=>t.classList.remove('sel'));el.classList.add('sel');}
+function sub(){
+  const ok=document.getElementById('con').checked&&document.getElementById('em').value&&document.getElementById('fn').value;
+  if(!ok){const b=document.getElementById('sb');const t=b.textContent;b.textContent='Veuillez compléter les champs requis';b.style.background='#8b2020';setTimeout(()=>{b.textContent=t;b.style.background='';},2200);return;}
+  document.getElementById('fs3').classList.remove('on');
+  document.getElementById('fsucc').classList.add('on');
+}
+</script>
+</body>
+</html>
